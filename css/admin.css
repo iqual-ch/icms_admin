@@ -1,0 +1,19 @@
+/* Paragraph tabs */
+@media screen and (min-width: 48em) {
+  .toolbar-fixed .is-horizontal .paragraphs-tabs.tabs--secondary:first-of-type{
+    width: auto;
+    display: block;
+    top: 110px !important;
+    padding-inline: 0 !important;
+    margin-bottom: 0;
+    overflow: visible;
+
+    & > li a {
+      padding-inline: var(--gin-spacing-m);
+    }
+  }
+
+  .is-horizontal .paragraphs-tabs.tabs--secondary::after {
+      position: static;
+  }
+}

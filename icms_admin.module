@@ -1,0 +1,19 @@
+<?php
+
+use Drupal\gin\GinSettings;
+
+/**
+ * Implements hook_page_attachments()
+ */
+function icms_admin_page_attachments(array &$attachments) {
+  $attachments['#attached']['library'][] = 'icms_admin/admin';
+
+  // Get theme settings (optional).
+  /** @var \Drupal\gin\GinSettings $settings */
+  $settings = \Drupal::classResolver(GinSettings::class);
+
+  $toolbar = $settings->get('classic_toolbar');
+  if ($toolbar === 'horizontal') {
+    $attachments['#attached']['library'][] = 'icms_admin/toolbar';
+  }
+}

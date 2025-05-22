@@ -1,0 +1,10 @@
+{
+    "name": "iqual/icms_admin",
+    "description": "ICMS Admin.",
+    "type": "drupal-module",
+    "license": ["GPL-2.0-or-later"],
+    "require": {
+        "drupal/core": "^10 || ^11"
+    },
+    "version": "1.x-dev"
+}

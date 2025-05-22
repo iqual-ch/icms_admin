@@ -1,0 +1,9 @@
+admin:
+  css:
+    theme:
+      css/admin.css: { }
+
+toolbar:
+  css:
+    theme:
+      css/toolbar.css: { }
