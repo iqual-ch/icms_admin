@@ -1,4 +1,4 @@
-name: 'iCMS Admin'
+name: 'ICMS Admin'
 type: module
 description: 'Provides a starting point for Drupal User Interface customizations.'
 package: Custom
