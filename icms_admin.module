@@ -1,6 +1,9 @@
 <?php
 
 use Drupal\gin\GinSettings;
+use Drupal\Core\Form\FormStateInterface;
+
+
 
 /**
  * Implements hook_page_attachments()
@@ -15,5 +18,30 @@ function icms_admin_page_attachments(array &$attachments) {
   $toolbar = $settings->get('classic_toolbar');
   if ($toolbar === 'horizontal') {
     $attachments['#attached']['library'][] = 'icms_admin/toolbar';
+  }
+}
+
+/**
+ * Implements hook_field_widget_complete_form_alter().
+ *
+ * Alter the form widget for specific paragraphs.
+ * It does not alter the form in Blökkli.
+ */
+function icms_admin_field_widget_complete_form_alter(&$field_widget_complete_form, FormStateInterface $form_state, $context) {
+  // Customizations for field_icms_listing_type, within a paragraph context.
+  if (
+    $field_widget_complete_form["widget"]["#field_name"] === "field_icms_listing_type"
+    && in_array('field_icms_paragraphs', $field_widget_complete_form["#parents"])
+  ) {
+    $current_paragraph = $context['items']->getEntity();
+    $current_node = $current_paragraph?->getParentEntity();
+    if ($current_node?->bundle() == 'icms_page') {
+      // Remove the "contextual" option from the field widget, if the page
+      // doesn't provide context (topics).
+      unset($field_widget_complete_form["widget"]["#options"]["contextual"]);
+      if ($field_widget_complete_form["widget"]["#default_value"][0] == 'contextual') {
+        $field_widget_complete_form["widget"]["#default_value"][0] = 'all';
+      }
+    }
   }
 }
