@@ -45,3 +45,15 @@ function icms_admin_field_widget_complete_form_alter(&$field_widget_complete_for
     }
   }
 }
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for node_form.
+ *
+ * This will be applied to all node forms.
+ */
+function icms_admin_form_node_form_alter(&$form, FormStateInterface $form_state, $form_id) : void {
+  // Author sidebar dialog open by default.
+  if (isset($form['author'])) {
+    $form['author']['#open'] = TRUE;
+  }
+}
