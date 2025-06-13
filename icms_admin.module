@@ -27,6 +27,8 @@ function icms_admin_page_attachments(array &$attachments) {
  * Alter the form widget for specific paragraphs.
  * It does not alter the form in Blökkli.
  */
+
+/* // Commented out but kept for reference.
 function icms_admin_field_widget_complete_form_alter(&$field_widget_complete_form, FormStateInterface $form_state, $context) {
   // Customizations for field_icms_listing_type, within a paragraph context.
   if (
@@ -45,6 +47,7 @@ function icms_admin_field_widget_complete_form_alter(&$field_widget_complete_for
     }
   }
 }
+*/
 
 /**
  * Implements hook_form_BASE_FORM_ID_alter() for node_form.
