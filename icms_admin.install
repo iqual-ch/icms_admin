@@ -1,0 +1,51 @@
+<?php
+
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+
+/**
+ * @file
+ * Install, update and uninstall functions for the ICMS Admin module.
+ */
+
+/**
+ * Enable icms_core_logic and bundle logic modules.
+ */
+function icms_admin_update_9001() {
+  $module_handler = \Drupal::moduleHandler();
+  $module_installer = \Drupal::service('module_installer');
+  $enabled = [];
+
+  // Enable icms_core_logic if not already enabled.
+  if (!$module_handler->moduleExists('icms_core_logic')) {
+    $module_installer->install(['icms_core_logic']);
+    $enabled[] = 'icms_core_logic';
+  }
+
+  // Map bundle content types to their logic modules.
+  $bundles = [
+    'icms_contenthub' => 'icms_bundle_contenthub_logic',
+    'icms_location' => 'icms_bundle_location_logic',
+    'icms_news' => 'icms_bundle_news_logic',
+    'icms_people' => 'icms_bundle_people_logic',
+    'icms_pressrelease' => 'icms_bundle_pressrelease_logic',
+    'icms_product' => 'icms_bundle_product_logic',
+    'icms_project' => 'icms_bundle_project_logic',
+  ];
+
+  // Enable bundle logic modules for installed bundles.
+  foreach ($bundles as $node_type => $logic_module) {
+    $node_type_config = \Drupal::config("node.type.{$node_type}");
+    if (!$node_type_config->isNew() && !$module_handler->moduleExists($logic_module)) {
+      $module_installer->install([$logic_module]);
+      $enabled[] = $logic_module;
+    }
+  }
+
+  if (empty($enabled)) {
+    return (string) new TranslatableMarkup('All logic modules were already enabled.');
+  }
+
+  return (string) new TranslatableMarkup('Enabled logic modules: @modules', [
+    '@modules' => implode(', ', $enabled),
+  ]);
+}
