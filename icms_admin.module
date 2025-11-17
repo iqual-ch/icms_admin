@@ -2,6 +2,7 @@
 
 use Drupal\gin\GinSettings;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Component\Serialization\Json;
 
 
 
@@ -58,5 +59,159 @@ function icms_admin_form_node_form_alter(&$form, FormStateInterface $form_state,
   // Author sidebar dialog open by default.
   if (isset($form['author'])) {
     $form['author']['#open'] = TRUE;
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for taxonomy_term_form.
+ */
+function icms_admin_form_taxonomy_term_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+  // Only hide the "Save" button if "Save and go to list" button exists.
+  // This prevents editors from landing on taxonomy term pages (which show 404 in decoupled frontend).
+  if (isset($form['actions']['overview']) && isset($form['actions']['submit'])) {
+    // Hide the default "Save" button only when the overview button is available.
+    $form['actions']['submit']['#access'] = FALSE;
+
+    // Make "Save and go to list" the primary action.
+    $form['actions']['overview']['#weight'] = -10;
+    $form['actions']['overview']['#button_type'] = 'primary';
+  }
+  elseif (isset($form['actions']['submit'])) {
+    // If only the "Save" button exists (destination parameter is present),
+    // modify it to redirect to the taxonomy overview instead of the term page.
+    array_unshift($form['actions']['submit']['#submit'], 'icms_admin_taxonomy_term_form_submit');
+  }
+}
+
+/**
+ * Custom submit handler for taxonomy term forms.
+ */
+function icms_admin_taxonomy_term_form_submit(array &$form, FormStateInterface $form_state) {
+  // Only modify redirect if there's no destination parameter already set.
+  $request = \Drupal::request();
+  if (!$request->query->has('destination')) {
+    /** @var \Drupal\Core\Entity\EntityFormInterface $form_object */
+    $form_object = $form_state->getFormObject();
+    /** @var \Drupal\taxonomy\TermInterface $term */
+    $term = $form_object->getEntity();
+    $vocabulary_id = $term->bundle();
+
+    // Redirect to the taxonomy overview page.
+    $form_state->setRedirect(
+      'entity.taxonomy_vocabulary.overview_form',
+      ['taxonomy_vocabulary' => $vocabulary_id]
+    );
+  }
+}
+
+/**
+ * Implements hook_entity_type_alter().
+ */
+function icms_admin_entity_type_alter(array &$entity_types) {
+  /** @var \Drupal\Core\Entity\EntityTypeInterface[] $entity_types */
+
+  // Override the menu entity list builder to show translations.
+  if (isset($entity_types['menu'])) {
+    $entity_types['menu']->setListBuilderClass('Drupal\icms_admin\MenuListBuilderWithTranslations');
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Integrates the conditional_fields module with paragraphs_blokkli paragraph forms.
+ *
+ * paragraphs_blokkli forms do not natively support the conditional_fields module,
+ * which provides dynamic show/hide logic for form fields based on other field values.
+ * This hook manually renders and applies conditional logic to fields in
+ * paragraphs_blokkli forms, ensuring that conditional fields behave as expected
+ * in the Blökkli visual editor. The implementation checks for the presence of
+ * the conditional_fields module, retrieves the relevant paragraph entity and
+ * bundle, and loads the form display configuration to apply conditional logic.
+ */
+function icms_admin_form_paragraphs_blokkli_paragraph_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+  // Check if the conditional_fields module is installed and enabled.
+  if (!\Drupal::moduleHandler()->moduleExists('conditional_fields')) {
+    return;
+  }
+
+  // Get the paragraph entity from the form state.
+  $paragraph = $form['#paragraph'] ?? NULL;
+  if (!$paragraph) {
+    return;
+  }
+
+  // Get the paragraph bundle (type).
+  $bundle = $paragraph->bundle();
+
+  // Load the form display configuration for the specific paragraph bundle.
+  // The form display ID follows the pattern 'paragraph.[bundle_name].default'.
+  $form_display = \Drupal::entityTypeManager()
+    ->getStorage('entity_form_display')
+    ->load('paragraph.' . $bundle . '.default');
+
+  // Proceed only if the form display configuration exists.
+  if ($form_display) {
+    $content_config = $form_display->get('content');
+
+    // This array will hold the conditional field settings.
+    $conditional_fields_settings = [];
+
+    // Iterate through the fields in the form display.
+    foreach ($content_config as $field_name => $field_settings) {
+      // Check for the 'conditional_fields' key within the 'third_party_settings'.
+      if (!empty($field_settings['third_party_settings']['conditional_fields'])) {
+        $conditional_fields_settings[$field_name] = $field_settings['third_party_settings']['conditional_fields'];
+      }
+    }
+
+    // If any conditional field settings were found, attach the required assets.
+    if (!empty($conditional_fields_settings)) {
+
+      // Attach the core Drupal states library.
+      $form['#attached']['library'][] = 'core/drupal.states';
+
+      // Attach the conditional_fields library.
+      $form['#attached']['library'][] = 'conditional_fields/conditional_fields';
+
+      // Now, we iterate through the settings and manually add the data-drupal-states
+      // attribute to the dependent form elements.
+      foreach ($conditional_fields_settings as $dependent_field_name => $field_config) {
+        // Find the form element for the dependent field.
+        if (isset($form[$dependent_field_name])) {
+
+          $states = [];
+          foreach ($field_config as $uuid => $setting) {
+            $state = $setting['settings']['state'];
+            $condition = $setting['settings']['condition'];
+            $value = $setting['settings']['value_form'][0]['value'] ?? '';
+            if (empty($value)) {
+              continue;
+            }
+            $dependee = $setting['dependee'];
+
+            // Construct the selector for the dependee field.
+            // The `name` attribute is the reliable way to select the field.
+            $selector = '[name="' . $dependee . '"]';
+
+            // Build the states array structure.
+            if (!isset($states[$state])) {
+              $states[$state] = [];
+            }
+            if (!isset($states[$state][$selector])) {
+              $states[$state][$selector] = [];
+            }
+            $states[$state][$selector][] = [$condition => $value];
+          }
+
+          // Convert the states array to a JSON string.
+          $json_states = Json::encode($states);
+
+          // Add the data-drupal-states attribute to the form element's wrapper.
+          // Note: This assumes the form structure places the attribute on the main field wrapper.
+          $form[$dependent_field_name]['#attributes']['data-drupal-states'] = $json_states;
+        }
+      }
+    }
   }
 }

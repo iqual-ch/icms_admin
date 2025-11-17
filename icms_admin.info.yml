@@ -3,3 +3,5 @@ type: module
 description: 'Provides a starting point for Drupal User Interface customizations.'
 package: Custom
 core_version_requirement: ^10 || ^11
+dependencies:
+  - paragraphs_blokkli:paragraphs_blokkli

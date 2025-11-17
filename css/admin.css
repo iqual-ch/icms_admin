@@ -1,3 +1,8 @@
+/**
+ * @file
+ * Admin UI tweaks for ICMS.
+ */
+
 /* Paragraph tabs */
 @media screen and (min-width: 48em) {
   .toolbar-fixed .is-horizontal .paragraphs-tabs.tabs--secondary:first-of-type{
@@ -16,4 +21,36 @@
   .is-horizontal .paragraphs-tabs.tabs--secondary::after {
       position: static;
   }
+}
+
+/* Simplify SuperUser UI */
+body:not(.admin) {
+
+  /* Hide menu language selector on menu edit forms */
+  form[data-drupal-selector="menu-edit-form"] {
+    .form-item--langcode,
+    [data-drupal-selector="edit-clear"] {
+      display: none;
+    }
+  }
+
+  /* Hide menu language selector on taxonomy edit forms */
+  form[data-drupal-selector="taxonomy-vocabulary-form"] {
+    .form-item--langcode,
+    [data-drupal-selector="edit-default-terms-language"] {
+      display: none;
+    }
+  }
+
+  /* Hide Content » Files tab */
+  li:not(.is-active)  {
+    a[data-drupal-link-system-path="admin/content/files"],
+    a[data-drupal-link-system-path="admin/content/block"],
+    a[data-drupal-link-system-path="admin/content/comment"],
+    a[data-drupal-link-system-path="admin/content/paragraphs"],
+    a[data-drupal-link-system-path="admin/content/paragraphs-blokkli-edit-state"] {
+      display: none;
+    }
+  }
+
 }
