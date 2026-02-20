@@ -215,3 +215,22 @@ function icms_admin_form_paragraphs_blokkli_paragraph_form_alter(array &$form, F
     }
   }
 }
+
+/**
+ * Implements hook_library_info_alter().
+ * 
+ * Allows to add custom CSS files to CKEditor using ckeditor5-stylesheets from 
+ * the info.yml in modules.
+ */
+function icms_admin_library_info_alter(&$libraries, $extension) {
+  $libraries['internal.drupal.ckeditor5.stylesheets'] = [
+    'css' => [
+      'theme' => array_merge(
+        $libraries['internal.drupal.ckeditor5.stylesheets']['css']['theme'] ?? [],
+        [
+          '/libraries/icms-blokkli-customization/css/ckeditor.css' => []
+        ],
+      ),
+    ],
+  ];
+}
