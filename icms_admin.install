@@ -30,6 +30,7 @@ function icms_admin_update_9001() {
     'icms_pressrelease' => 'icms_bundle_pressrelease_logic',
     'icms_product' => 'icms_bundle_product_logic',
     'icms_project' => 'icms_bundle_project_logic',
+    'icms_event' => 'icms_bundle_event_logic',
   ];
 
   // Enable bundle logic modules for installed bundles.

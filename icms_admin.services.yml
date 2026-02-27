@@ -1,0 +1,5 @@
+services:
+  icms_admin.webform_install_subscriber:
+    class: Drupal\icms_admin\EventSubscriber\WebformInstallSubscriber
+    tags:
+      - { name: event_subscriber }
