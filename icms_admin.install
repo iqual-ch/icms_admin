@@ -50,3 +50,41 @@ function icms_admin_update_9001() {
     '@modules' => implode(', ', $enabled),
   ]);
 }
+
+/**
+ * Replace admin_toolbar_search with coffee module.
+ */
+function icms_admin_update_9002() {
+  $module_installer = \Drupal::service('module_installer');
+  $module_handler = \Drupal::moduleHandler();
+  $messages = [];
+
+  // Uninstall admin_toolbar_search if it exists.
+  if ($module_handler->moduleExists('admin_toolbar_search')) {
+    $module_installer->uninstall(['admin_toolbar_search']);
+    $messages[] = 'Uninstalled admin_toolbar_search module.';
+  }
+  else {
+    $messages[] = 'admin_toolbar_search module was not installed.';
+  }
+
+  // Install coffee module.
+  if (!$module_handler->moduleExists('coffee')) {
+    $module_installer->install(['coffee']);
+    $messages[] = 'Installed coffee module.';
+  }
+  else {
+    $messages[] = 'coffee module was already installed.';
+  }
+
+  // Grant 'access coffee' permission to authenticated users.
+  // This will be properly configured via config import after this update.
+  $role = \Drupal\user\Entity\Role::load('authenticated');
+  if ($role && !$role->hasPermission('access coffee')) {
+    $role->grantPermission('access coffee');
+    $role->save();
+    $messages[] = 'Granted access coffee permission to authenticated users.';
+  }
+
+  return (string) new TranslatableMarkup(implode(' ', $messages));
+}
