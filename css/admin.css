@@ -23,6 +23,13 @@
   }
 }
 
+/* Hide paragraph "Behavior" tab for specific fields */
+#field-icms-event-occurrence-add-more-wrapper  {
+  .paragraphs-tabs {
+      display: none;
+  }
+}
+
 /* Simplify SuperUser UI */
 body:not(.admin) {
 
