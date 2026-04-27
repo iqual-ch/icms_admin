@@ -9,5 +9,5 @@
         "drupal/core": "^10 || ^11",
         "drupal/coffee": "^2.0"
     },
-    "version": "1.x-dev"
+    "version": "1.5.5"
 }
