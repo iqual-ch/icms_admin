@@ -96,7 +96,7 @@ function icms_admin_install_webform($config_name, $module_name) {
 }
 
 /**
- * Implements hook_page_attachments()
+ * Implements hook_page_attachments().
  */
 function icms_admin_page_attachments(array &$attachments) {
   $attachments['#attached']['library'][] = 'icms_admin/admin';
@@ -120,24 +120,24 @@ function icms_admin_page_attachments(array &$attachments) {
 
 /* // Commented out but kept for reference.
 function icms_admin_field_widget_complete_form_alter(&$field_widget_complete_form, FormStateInterface $form_state, $context) {
-  // Customizations for field_icms_listing_type, within a paragraph context.
-  if (
-    $field_widget_complete_form["widget"]["#field_name"] === "field_icms_listing_type"
-    && in_array('field_icms_paragraphs', $field_widget_complete_form["#parents"])
-  ) {
-    $current_paragraph = $context['items']->getEntity();
-    $current_node = $current_paragraph?->getParentEntity();
-    if ($current_node?->bundle() == 'icms_page') {
-      // Remove the "contextual" option from the field widget, if the page
-      // doesn't provide context (topics).
-      unset($field_widget_complete_form["widget"]["#options"]["contextual"]);
-      if ($field_widget_complete_form["widget"]["#default_value"][0] == 'contextual') {
-        $field_widget_complete_form["widget"]["#default_value"][0] = 'all';
-      }
-    }
-  }
+// Customizations for field_icms_listing_type, within a paragraph context.
+if (
+$field_widget_complete_form["widget"]["#field_name"] === "field_icms_listing_type"
+&& in_array('field_icms_paragraphs', $field_widget_complete_form["#parents"])
+) {
+$current_paragraph = $context['items']->getEntity();
+$current_node = $current_paragraph?->getParentEntity();
+if ($current_node?->bundle() == 'icms_page') {
+// Remove the "contextual" option from the field widget, if the page
+// doesn't provide context (topics).
+unset($field_widget_complete_form["widget"]["#options"]["contextual"]);
+if ($field_widget_complete_form["widget"]["#default_value"][0] == 'contextual') {
+$field_widget_complete_form["widget"]["#default_value"][0] = 'all';
 }
-*/
+}
+}
+}
+ */
 
 /**
  * Implements hook_form_BASE_FORM_ID_alter() for node_form.
@@ -307,8 +307,8 @@ function icms_admin_form_paragraphs_blokkli_paragraph_form_alter(array &$form, F
 
 /**
  * Implements hook_library_info_alter().
- * 
- * Allows to add custom CSS files to CKEditor using ckeditor5-stylesheets from 
+ *
+ * Allows to add custom CSS files to CKEditor using ckeditor5-stylesheets from
  * the info.yml in modules.
  */
 function icms_admin_library_info_alter(&$libraries, $extension) {
@@ -317,7 +317,7 @@ function icms_admin_library_info_alter(&$libraries, $extension) {
       'theme' => array_merge(
         $libraries['internal.drupal.ckeditor5.stylesheets']['css']['theme'] ?? [],
         [
-          '/libraries/icms-blokkli-customization/css/ckeditor.css' => []
+          '/libraries/icms-blokkli-customization/css/ckeditor.css' => [],
         ],
       ),
     ],
