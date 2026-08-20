@@ -358,3 +358,18 @@ function icms_admin_library_info_alter(&$libraries, $extension) {
     ],
   ];
 }
+
+/**
+ * Implements hook_local_tasks_alter().
+ *
+ * Removes the "Submissions" tab Webform puts on every user profile.
+ *
+ * The tab lists a user's own webform submissions at /user/{user}/submissions.
+ * ICMS enables Webform for editors to build forms with, not as a feature users
+ * browse their own history in, and the frontend does all public rendering — so
+ * the tab is a dead end on an entity that has nothing to do with webforms.
+ * The route itself is left in place; only the tab is taken off the profile.
+ */
+function icms_admin_local_tasks_alter(array &$local_tasks) {
+  unset($local_tasks['entity.webform_submission.user']);
+}
