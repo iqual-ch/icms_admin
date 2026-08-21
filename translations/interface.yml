@@ -1,0 +1,32 @@
+# Interface translations ICMS supplies because the upstream project has none.
+#
+# Drupal imports contrib translations from localize.drupal.org, and whatever is
+# missing there stays English in the admin UI. These entries fill the gaps that
+# leave an ICMS editor looking at an English word among translated ones.
+#
+# Keyed by source string, then by langcode. The source has to match the English
+# string exactly, including case, and belongs to the empty context — the same
+# string in another context is a different translation and is not covered here.
+#
+# Imported by icms_admin on install and by its update hooks, flagged as
+# customized so `drush locale:update` never overwrites them
+# (locale.settings: overwrite_customized: false). A translation an editor has
+# since edited by hand is left alone.
+#
+# Languages that are not installed on the site are skipped, so the same payload
+# is safe on a single-language build.
+
+# Webform's per-entity results tab and its first sub-tab. Neither string exists
+# in webform's de/fr/it .po files at all, so both stay English while every core
+# tab around them ("Clear" → "Leeren", "Download" → "Herunterladen") is
+# translated. Deliberately the literal wording: the tab appears on any node
+# carrying a webform, not only on an event, so "Anmeldungen" would be wrong.
+Results:
+  de: Ergebnisse
+  fr: Résultats
+  it: Risultati
+
+Submissions:
+  de: Eingaben
+  fr: Soumissions
+  it: Invii

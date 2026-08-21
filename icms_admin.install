@@ -1,11 +1,136 @@
 <?php
 
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * @file
  * Install, update and uninstall functions for the ICMS Admin module.
  */
+
+/**
+ * Implements hook_install().
+ */
+function icms_admin_install() {
+  icms_admin_import_interface_translations();
+}
+
+/**
+ * Imports the interface translations ICMS supplies for upstream gaps.
+ *
+ * Contrib translations come from localize.drupal.org, and what is missing there
+ * stays English in the admin UI. The entries in translations/interface.yml fill
+ * those gaps. They are written as *customized* translations, which is what stops
+ * `drush locale:update` from overwriting them again
+ * (locale.settings: overwrite_customized: false).
+ *
+ * A translation someone has already customized by hand is left alone, and a
+ * language that is not installed is skipped, so the same payload is safe on a
+ * single-language build.
+ *
+ * @return string[]
+ *   Human-readable summary lines, one per language touched.
+ */
+function icms_admin_import_interface_translations(): array {
+  $module_name = 'icms_admin';
+
+  if (!\Drupal::moduleHandler()->moduleExists('locale')) {
+    \Drupal::logger($module_name)->notice('Skipped interface translations because locale is not enabled.');
+    return [];
+  }
+
+  $module_path = \Drupal::service('extension.list.module')->getPath($module_name);
+  $file = DRUPAL_ROOT . '/' . $module_path . '/translations/interface.yml';
+
+  if (!is_readable($file)) {
+    \Drupal::logger($module_name)->warning('No readable interface translation file at @path.', ['@path' => $file]);
+    return [];
+  }
+
+  try {
+    $data = Yaml::parseFile($file);
+  }
+  catch (\Throwable $e) {
+    \Drupal::logger($module_name)->error('Could not parse interface translations: @message', ['@message' => $e->getMessage()]);
+    return [];
+  }
+
+  if (!is_array($data) || !$data) {
+    return [];
+  }
+
+  /** @var \Drupal\locale\StringStorageInterface $storage */
+  $storage = \Drupal::service('locale.storage');
+  $installed = \Drupal::languageManager()->getLanguages();
+  $written = [];
+  $lids = [];
+
+  foreach ($data as $source => $translations) {
+    if (!is_array($translations)) {
+      continue;
+    }
+
+    // The string is only in locales_source once Drupal has encountered it, and
+    // the tab titles are encountered lazily. Creating it is harmless: locale
+    // matches on source and context, so a later collection finds this row.
+    $string = $storage->findString(['source' => (string) $source, 'context' => '']);
+    if (!$string) {
+      $string = $storage->createString(['source' => (string) $source, 'context' => '']);
+      $string->save();
+    }
+
+    foreach ($translations as $langcode => $translation) {
+      if (!isset($installed[$langcode]) || $langcode === 'en') {
+        continue;
+      }
+
+      // 'translated' => TRUE is what distinguishes a real translation row from
+      // an absent one. findTranslation() would hand back a TranslationString
+      // either way — with a NULL language when there is nothing there, which
+      // then fails isTranslation() and refuses to save.
+      $existing = $storage->getTranslations([
+        'lid' => $string->lid,
+        'language' => $langcode,
+        'translated' => TRUE,
+      ]);
+      $existing = reset($existing) ?: NULL;
+
+      if ($existing) {
+        // Already what we ship, or edited by hand — either way, leave it.
+        if ($existing->translation === (string) $translation
+          || (int) ($existing->customized ?? 0) === LOCALE_CUSTOMIZED) {
+          continue;
+        }
+      }
+
+      $target = $existing ?: $storage->createTranslation([
+        'lid' => $string->lid,
+        'language' => $langcode,
+      ]);
+      $target->setPlurals([(string) $translation])->setCustomized()->save();
+
+      $written[$langcode][] = (string) $source;
+      $lids[$string->lid] = $string->lid;
+    }
+  }
+
+  if ($lids) {
+    // Without these the old (English) value stays in the translation caches.
+    _locale_refresh_translations(array_keys($written), array_values($lids));
+    _locale_refresh_configuration(array_keys($written), array_values($lids));
+  }
+
+  $summary = [];
+  foreach ($written as $langcode => $sources) {
+    $summary[] = sprintf('%s: %d', $langcode, count($sources));
+  }
+
+  \Drupal::logger($module_name)->notice('Imported interface translations (@summary).', [
+    '@summary' => $summary ? implode(', ', $summary) : 'nothing to do',
+  ]);
+
+  return $summary;
+}
 
 /**
  * Enable icms_core_logic and bundle logic modules.
@@ -101,4 +226,24 @@ function icms_admin_update_9003() {
     return (string) new TranslatableMarkup('Installed views_bulk_edit module.');
   }
   return (string) new TranslatableMarkup('views_bulk_edit module was already installed.');
+}
+
+/**
+ * Translate Webform's "Results" and "Submissions" tabs.
+ *
+ * Neither string exists in webform's de/fr/it translations upstream, so the
+ * per-event results tab stayed English next to translated core tabs.
+ *
+ * @see icms_admin_import_interface_translations()
+ */
+function icms_admin_update_9004() {
+  $summary = icms_admin_import_interface_translations();
+
+  if (!$summary) {
+    return (string) new TranslatableMarkup('No interface translations needed importing.');
+  }
+
+  return (string) new TranslatableMarkup('Imported interface translations (@summary).', [
+    '@summary' => implode(', ', $summary),
+  ]);
 }
