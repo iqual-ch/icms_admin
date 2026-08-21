@@ -28,11 +28,20 @@ function icms_admin_install() {
  * language that is not installed is skipped, so the same payload is safe on a
  * single-language build.
  *
+ * Any ICMS module can ship the same file and pass its own name — the ICMS
+ * packages are not on localize.drupal.org either, so their own strings arrive
+ * the same way.
+ *
+ * @param string $module_name
+ *   The module whose translations/interface.yml to import.
+ *
  * @return string[]
  *   Human-readable summary lines, one per language touched.
  */
-function icms_admin_import_interface_translations(): array {
-  $module_name = 'icms_admin';
+function icms_admin_import_interface_translations(string $module_name = 'icms_admin'): array {
+  if (!\Drupal::moduleHandler()->moduleExists($module_name)) {
+    return [];
+  }
 
   if (!\Drupal::moduleHandler()->moduleExists('locale')) {
     \Drupal::logger($module_name)->notice('Skipped interface translations because locale is not enabled.');
