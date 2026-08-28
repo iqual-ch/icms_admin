@@ -88,3 +88,17 @@ function icms_admin_update_9002() {
 
   return implode(' ', $messages);
 }
+
+/**
+ * Install views_bulk_edit module for bulk editing moderated content.
+ */
+function icms_admin_update_9003() {
+  $module_installer = \Drupal::service('module_installer');
+  $module_handler = \Drupal::moduleHandler();
+
+  if (!$module_handler->moduleExists('views_bulk_edit')) {
+    $module_installer->install(['views_bulk_edit']);
+    return (string) new TranslatableMarkup('Installed views_bulk_edit module.');
+  }
+  return (string) new TranslatableMarkup('views_bulk_edit module was already installed.');
+}
