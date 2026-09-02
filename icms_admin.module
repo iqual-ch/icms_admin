@@ -140,6 +140,19 @@ $field_widget_complete_form["widget"]["#default_value"][0] = 'all';
  */
 
 /**
+ * Implements hook_field_widget_info_alter().
+ *
+ * Swap the linkit widget class so links to unrouted entity paths (e.g.
+ * /media/N selected from the autocomplete while standalone media URLs are
+ * disabled) are stored as "entity:" URIs instead of "internal:" (ICMS-595).
+ */
+function icms_admin_field_widget_info_alter(array &$info) {
+  if (isset($info['linkit'])) {
+    $info['linkit']['class'] = \Drupal\icms_admin\Plugin\Field\FieldWidget\IcmsLinkitWidget::class;
+  }
+}
+
+/**
  * Implements hook_form_BASE_FORM_ID_alter() for node_form.
  *
  * This will be applied to all node forms.
