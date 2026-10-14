@@ -3,6 +3,13 @@
  * Admin UI tweaks for ICMS.
  */
 
+/* blökkli iframe pages (forms opened from the editor): no toolbar chrome. The
+   secondary toolbar itself is removed in icms_admin_preprocess_html_after_gin();
+   Gin's wrapper keeps its height and border without it. */
+.icms-blokkli-frame .gin-secondary-toolbar {
+  display: none;
+}
+
 /* Paragraph tabs */
 @media screen and (min-width: 48em) {
   .toolbar-fixed .is-horizontal .paragraphs-tabs.tabs--secondary:first-of-type{

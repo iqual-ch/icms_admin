@@ -377,3 +377,135 @@ function icms_admin_library_info_alter(&$libraries, $extension) {
 function icms_admin_local_tasks_alter(array &$local_tasks) {
   unset($local_tasks['entity.webform_submission.user']);
 }
+
+/**
+ * Implements hook_menu_links_discovered_alter().
+ *
+ * Core's navigation toolbar shows initials for admin menu links without an
+ * icon in its pack; give the front page and translation links one.
+ */
+function icms_admin_menu_links_discovered_alter(array &$links): void {
+  $icons = [
+    'admin_toolbar_tools.help' => 'home',
+    'tmgmt.admin_tmgmt' => 'translate',
+  ];
+  foreach ($icons as $plugin_id => $icon_id) {
+    if (isset($links[$plugin_id])) {
+      $links[$plugin_id]['options']['icon'] = ['pack_id' => 'icms_admin', 'icon_id' => $icon_id];
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for the navigation toolbar layout.
+ *
+ * Core's navigation renders its own logo unless one is uploaded in its
+ * settings; Gin passes its logo under a variable the core template does not
+ * read. Use Gin's logo (the project branding) when navigation has none.
+ */
+function icms_admin_preprocess_navigation(array &$variables): void {
+  if (!empty($variables['settings']['logo_path']) || !empty($variables['settings']['hide_logo']) || !class_exists(GinSettings::class)) {
+    return;
+  }
+  /** @var \Drupal\gin\GinSettings $settings */
+  $settings = \Drupal::classResolver(GinSettings::class);
+  if ($settings->getDefault('logo.use_default')) {
+    return;
+  }
+  $path = (string) $settings->getDefault('logo.path');
+  if ($path === '') {
+    return;
+  }
+  $variables['settings']['logo_path'] = \Drupal::service('file_url_generator')->generateString($path);
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Runs icms_admin_preprocess_html_after_gin() after Gin's own preprocess so
+ * it can correct the toolbar classes Gin sets.
+ */
+function icms_admin_theme_registry_alter(array &$theme_registry): void {
+  // Suggestions (page__node__edit, …) carry their own copy of the list.
+  foreach ($theme_registry as $hook => &$info) {
+    foreach (['html', 'page'] as $base) {
+      if (($hook === $base || str_starts_with($hook, $base . '__')) && isset($info['preprocess functions'])) {
+        $info['preprocess functions'][] = 'icms_admin_preprocess_' . $base . '_after_gin';
+      }
+    }
+  }
+}
+
+/**
+ * Whether the current request renders a page inside a blökkli iframe.
+ *
+ * Mirrors paragraphs_blokkli_preprocess_html(), which strips the toolbar,
+ * navigation and page chrome from these pages.
+ */
+function icms_admin_is_blokkli_frame(): bool {
+  $route_name = (string) \Drupal::routeMatch()->getRouteName();
+  return (bool) \Drupal::request()->query->get('paragraphsBlokkli') || str_starts_with($route_name, 'paragraphs_blokkli.');
+}
+
+/**
+ * Strips Gin's remaining chrome from blökkli iframe pages.
+ *
+ * The paragraphs_blokkli module removes the page_top region (navigation,
+ * toolbar) from its iframe pages, but Gin adds its secondary toolbar
+ * (#toolbar-administration-secondary) to the page afterwards, in its own
+ * preprocess — the black bar above the form. Drop it; css/admin.css hides
+ * its wrapper (which has a height of its own) via the body class.
+ *
+ * With core navigation active Gin also lays out form actions for the
+ * navigation top bar, which left the sticky save button collapsed to a few
+ * pixels. Style those pages like Gin's toolbar-less horizontal layout, which
+ * they used before.
+ */
+function icms_admin_preprocess_html_after_gin(array &$variables): void {
+  if (!icms_admin_is_blokkli_frame()) {
+    return;
+  }
+  unset($variables['page']['gin_secondary_toolbar']);
+  $classes = &$variables['attributes']['class'];
+  if (!is_array($classes)) {
+    $classes = [];
+  }
+  $classes[] = 'icms-blokkli-frame';
+  if (in_array('gin--core-navigation', $classes, TRUE)) {
+    $classes = array_values(array_diff($classes, ['gin--core-navigation']));
+    $classes[] = 'gin--horizontal-toolbar';
+  }
+}
+
+/**
+ * Keeps the form actions in the form on blökkli iframe pages.
+ *
+ * Gin moves a form's actions into its sticky header (or, with core
+ * navigation, the top bar) and clips the form's own. paragraphs_blokkli hides
+ * that header in its iframe pages and styles the form's own action bar
+ * instead, which core navigation left clipped — no save button. Don't move
+ * the actions there.
+ */
+function icms_admin_preprocess_page_after_gin(array &$variables): void {
+  if (!icms_admin_is_blokkli_frame()) {
+    return;
+  }
+  // Without core navigation Gin's classic sticky header holds the actions.
+  $variables['active_core_navigation'] = FALSE;
+  $form_actions = function_exists('_gin_form_actions') ? _gin_form_actions() : NULL;
+  // paragraphs_blokkli hides that header on its own form routes (its
+  // iframe_modal library) and shows the form's own action bar instead.
+  $hidden_header_routes = [
+    'paragraphs_blokkli.edit_host_entity_form',
+    'paragraphs_blokkli.add_paragraph',
+    'paragraphs_blokkli.translate_paragraphs',
+    'paragraphs_blokkli.edit_paragraph',
+  ];
+  if (in_array(\Drupal::routeMatch()->getRouteName(), $hidden_header_routes, TRUE)) {
+    $variables['gin_form_actions'] = '';
+    $variables['gin_form_actions_class'] = '';
+  }
+  elseif ($form_actions) {
+    $variables['gin_form_actions'] = $form_actions;
+  }
+}
