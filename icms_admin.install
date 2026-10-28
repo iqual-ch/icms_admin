@@ -236,7 +236,7 @@ function icms_admin_update_9003() {
   // icms_core_logic, which depends on this module.
   if (\Drupal::hasService('icms_core_logic.update_config_installer')) {
     if (\Drupal::service('icms_core_logic.update_config_installer')->installModules(['views_bulk_edit'])) {
-      return (string) new TranslatableMarkup('Installed views_bulk_edit module; its config entities are left to the config import.');
+      return (string) new TranslatableMarkup('Installed views_bulk_edit module with its config from the export.');
     }
   }
   else {
