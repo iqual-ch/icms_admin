@@ -383,6 +383,10 @@ function icms_admin_local_tasks_alter(array &$local_tasks) {
  *
  * Core's navigation toolbar shows initials for admin menu links without an
  * icon in its pack; give the front page and translation links one.
+ *
+ * Masquerade offers "Unmasquerade" in the account menu and the classic
+ * toolbar, neither of which core navigation shows: list it with the
+ * navigation's user links, before "Log out".
  */
 function icms_admin_menu_links_discovered_alter(array &$links): void {
   $icons = [
@@ -393,6 +397,10 @@ function icms_admin_menu_links_discovered_alter(array &$links): void {
     if (isset($links[$plugin_id])) {
       $links[$plugin_id]['options']['icon'] = ['pack_id' => 'icms_admin', 'icon_id' => $icon_id];
     }
+  }
+  if (isset($links['masquerade.unmasquerade'], $links['navigation.user_links.user.logout'])) {
+    $links['masquerade.unmasquerade']['menu_name'] = 'navigation-user-links';
+    $links['masquerade.unmasquerade']['weight'] = 5;
   }
 }
 
